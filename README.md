@@ -1,3 +1,4 @@
+Download and open import the .json file in n8n for further setup.
 🔧 Workflow: Automated LinkedIn AI Trend Posting
 
 Step 1: Trigger the Workflow
