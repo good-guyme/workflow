@@ -1,0 +1,493 @@
+{
+  "name": "Linkdin Content",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"give the latest trends and information: {{ $json.Title }}\",\n  \"auto_parameters\": false,\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 2,\n  \"time_range\": null,\n  \"start_date\": \"2025-02-09\",\n  \"end_date\": \"2025-12-29\",\n  \"include_answer\": false,\n  \"include_raw_content\": false,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_favicon\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null,\n  \"include_usage\": false\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        416
+      ],
+      "id": "93e30331-b33e-4c60-8da5-5f9657f85062",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Title : {{ $('On form submission').item.json.Topic }}\nResult 1:{{ $json.results[0].content }}\nResult 2: {{ $json.results[1].content }}",
+        "options": {
+          "systemMessage": "You are a LinkedIn content writer for a professional AI & tech audience.\nYour job is to turn raw web search results into a polished, engaging LinkedIn post.\n\n- Make the content easy to understand for a non-technical reader\n- Keep it professional but slightly conversational in tone\n- Surface the most important insight from the research\n- Leave the reader with something genuinely useful\n- can use emojis to make it more interective\n- make it structured so it looks good\n\n- Never copy the source text — rewrite everything in your own words\n- Do not mention \"source\", \"Tavily\", \"Serper\", or any search tool\n- Do not include URLs or external links\n- Keep the post between 100 and 200 words\n- Use short paragraphs (2–3 lines max) for mobile readability\n- End with exactly 4–6 relevant hashtags on the last line\n- don't use characters like (*, %, ^ or +)\n\nStructure the post in this exact order:\n\n1. HOOK (line 1–2): One bold, attention-grabbing statement.\n   Make it surprising, counterintuitive, or urgency driven.\n   This line must work as a standalone sentence — it's what\n   people see before clicking \"see more\".\n\n2. CONTEXT (2–3 lines): Explain the key idea simply.\n   What is happening? Why does it matter right now?\n\n3. INSIGHT (2–3 lines): The most interesting or actionable\n   detail from the research. Make the reader feel smarter.\n\n4. TAKEAWAY (1–2 lines): A simple closing thought, question,\n   or challenge for the reader.\n\n5. HASHTAGS: 4–6 tags, lowercase, relevant to AI / tech / the topic.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        848,
+        416
+      ],
+      "id": "0d73d035-476d-47f2-ac09-f1377b17a61e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        656
+      ],
+      "id": "16cdca35-25a1-459c-980e-483f51d0c15d",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-image-1.5"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "size",
+              "value": "1024x1024"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1552,
+        416
+      ],
+      "id": "11d2d389-892c-4242-9e72-d91c09a68ee2",
+      "name": "Create Image"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Post details:  {{ $json.output }}",
+        "options": {
+          "systemMessage": "You are an AI image prompt engineer specializing in LinkedIn content visuals.\nYour job is to read a LinkedIn post and generate a single, precise image generation prompt that visually represents the core idea of that post.\nThe image will be used as the header visual for a LinkedIn post. It must look professional, eye-catching, and relevant — not generic stock photography.\n\nStyle: clean flat design, minimal, modern tech aesthetic\nColor palette: deep navy, electric blue, soft white, subtle purple accents\nComposition: high visual balance, generous negative space\nMood: intelligent, forward-thinking, professional\nRender quality: sharp, high resolution, no noise, no lens flare\nNo logos.\nthe size will be 920x920\n\n- Generate exactly ONE image prompt — no explanations, no alternatives\n- Do not use generic visuals (handshakes, lightbulbs, stock office people)\n- Never depict real people, celebrities, or branded logos\n- The image should be abstract-conceptual or metaphorical — visualize the IDEA\n- Output only the raw image prompt, nothing else\n\n\nSample generated prompt (AI trends topic)\n\nA vast neural network rendered as glowing interconnected nodes stretching across a deep navy void, pulses of electric blue light travelling along each connection path, abstract data streams flowing between clusters, symbolizing intelligence and machine learning at scale, clean flat design, minimal modern tech aesthetic, wide landscape 1200x627, high visual balance, generous negative space, sharp high resolution, no text, no letters, no logos."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1136,
+        416
+      ],
+      "id": "87384dd1-b224-4793-a733-7c8517a9d72d",
+      "name": "Image Promt"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data[0].b64_json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        416
+      ],
+      "id": "1b92abda-a690-40cd-8e22-0b3c6764ecf0",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "person": "1PE0Z3f4Kg",
+        "text": "={{ $('AI Agent').item.json.output }}",
+        "shareMediaCategory": "IMAGE",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        416
+      ],
+      "id": "34f47505-af92-4a5e-b007-e30e8f6d2714",
+      "name": "Create a post"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 2,
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        240
+      ],
+      "id": "fda3ee07-7db7-46b7-b3eb-b54240888896",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 192,
+        "width": 432,
+        "color": "#1B5028"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1488,
+        400
+      ],
+      "typeVersion": 1,
+      "id": "f30f1dcc-264c-41fd-8449-54099de9dfc6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 384,
+        "width": 640,
+        "color": "#2F0404"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        784,
+        400
+      ],
+      "typeVersion": 1,
+      "id": "bb524dcd-fe18-4a21-8684-c17c40b4266a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0",
+          "mode": "list",
+          "cachedResultName": "Linkdin ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Not Done"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        416
+      ],
+      "id": "453c4c35-2819-42e2-8bb3-987c38340e9d",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0",
+          "mode": "list",
+          "cachedResultName": "Linkdin ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1a_gIdDamodCV3OIFpH91HdDlLiK-3UAzu3xdZscVWn0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Get row(s) in sheet').item.json.Topic }}",
+            "Status": "Done"
+          },
+          "matchingColumns": [
+            "Topic"
+          ],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Info",
+              "displayName": "Info",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2288,
+        416
+      ],
+      "id": "b6e9763c-0451-4c5d-aa73-46fc43d1a066",
+      "name": "Update row in sheet"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        96,
+        416
+      ],
+      "id": "d9441d08-630a-4cbb-997a-f736b39e4be1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        416
+      ],
+      "id": "33852626-25d5-4f6c-8574-0387f7574530",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 208,
+        "width": 720
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1968,
+        384
+      ],
+      "typeVersion": 1,
+      "id": "0b72e9f1-7462-43ed-b528-5426ad899dda",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Image Promt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Image Promt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Promt": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Create a post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a post": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f3bf1ad7-18db-4681-a963-433875731a4f",
+  "meta": {
+    "instanceId": "2b81eae7c7e70d7fbf2dbe089b79d452cc17620ee3646df1ebaae5e80ce73d24"
+  },
+  "id": "npPIhZd3M9yVzPMn",
+  "tags": []
+}
